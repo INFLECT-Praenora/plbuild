@@ -1,88 +1,89 @@
 # Vocabulary for the first library, built from BIOMD0000000427 alone.
 # No identifiers: in this model the active and inactive forms share one UniProt id, and RafPP is annotated as Raf,
 # so annotation matching (spec section 6, step 2) would map Raf_active and RafPP to Raf. Species match by name instead.
-# Unit: the model declares none; values are molecule counts per cell.
+# Unit: the model declares none; values are molecule counts per cell. The cell compartment has size 1, so they are
+# written item/litre with overrides.yaml giving volume = litre, and every conversion factor is 1.
 
 A_SOS:
   class: molecule
-  unit: item
+  unit: item/litre
 
 AKT:
   class: molecule
-  unit: item
+  unit: item/litre
 
 AKT_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 D_SOS:
   class: molecule
-  unit: item
+  unit: item/litre
 
 EGFR_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 ERK:
   class: molecule
-  unit: item
+  unit: item/litre
 
 ERK_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 IGFR_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Mek:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Mek_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 P90Rsk_Active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 P90RskInactive:
   class: molecule
-  unit: item
+  unit: item/litre
 
 PI3KCA:
   class: molecule
-  unit: item
+  unit: item/litre
 
 PI3KCA_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 PP2A:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Raf:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Raf_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 RafPP:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Ras:
   class: molecule
-  unit: item
+  unit: item/litre
 
 Ras_active:
   class: molecule
-  unit: item
+  unit: item/litre
 
 RasGapActive:
   class: molecule
-  unit: item
+  unit: item/litre

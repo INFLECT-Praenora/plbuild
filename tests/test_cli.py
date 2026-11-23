@@ -17,7 +17,7 @@ def test_help_lists_all_commands():
     assert set(COMMANDS) == {"search", "fetch", "build", "validate", "explain"}
 
 
-@pytest.mark.parametrize("cmd", ["fetch", "build", "validate"])
+@pytest.mark.parametrize("cmd", ["fetch"])
 def test_stub_commands_load_config_then_report_not_implemented(cmd, capsys):
     assert main([cmd, "--config", str(EXAMPLE)]) == 2
     assert "not implemented" in capsys.readouterr().err

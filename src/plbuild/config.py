@@ -90,6 +90,8 @@ class ModelEntry:
     version: str | None = None
     allow_uncurated: bool = False
     default_compartment: str | None = None
+    sbml: Path | None = None          # local SBML file; used instead of the cache until fetch (L1) exists
+    time_span: float = 100.0          # simulation end time for the reconstruction test, in source time units
 
 
 @dataclass
@@ -99,6 +101,8 @@ class BuildConfig:
     compartments: dict[str, CompartmentSpec]
     time_unit: str
     bounds_factor: float
+    library_size: int | None            # number of entries drawn into the library; None = all
+    library_seed: int                   # seed of that draw
     vocabulary_path: Path
     overrides_path: Path | None
     cache_dir: Path
@@ -139,7 +143,7 @@ def _load_build_config(path: Path) -> BuildConfig:
             entry_d.line, entry_d.key_lines = line, {"id": line}
             entry = entry_d
         entry = c.mapping(entry, line, f"models[{i}]")
-        c.keys(entry, {"id", "version", "allow_uncurated", "default_compartment"}, f"models[{i}]", required={"id"}, line=line)
+        c.keys(entry, {"id", "version", "allow_uncurated", "default_compartment", "sbml", "time_span"}, f"models[{i}]", required={"id"}, line=line)
         mid = c.string(entry["id"], entry.line_of("id"), "model id")
         if not BIOMODELS_ID.match(mid):
             c.fail(entry.line_of("id"), f"'{mid}' is not a BioModels id (BIOMD or MODEL followed by 10 digits)")
@@ -157,14 +161,24 @@ def _load_build_config(path: Path) -> BuildConfig:
         if dc is not None and dc not in comps:
             c.fail(entry.line_of("default_compartment"),
                    f"default_compartment '{dc}' is not one of the declared compartments ({', '.join(comps)})")
-        models.append(ModelEntry(mid, version, allow, dc))
+        sbml = base / c.string(entry["sbml"], entry.line_of("sbml"), "sbml") if "sbml" in entry else None
+        span = c.number(entry["time_span"], entry.line_of("time_span"), "time_span", positive=True)             if "time_span" in entry else 100.0
+        models.append(ModelEntry(mid, version, allow, dc, sbml, span))
 
-    time_unit = "hour"
+    time_unit, size, seed = "hour", None, 0
     if "library" in top:
         lib = c.mapping(top["library"], top.line_of("library"), "library")
-        c.keys(lib, {"time_unit"}, "library")
+        c.keys(lib, {"time_unit", "size", "seed"}, "library")
         if "time_unit" in lib:
             time_unit = c.string(lib["time_unit"], lib.line_of("time_unit"), "library.time_unit")
+        if "size" in lib:
+            if isinstance(lib["size"], bool) or not isinstance(lib["size"], int) or lib["size"] < 1:
+                c.fail(lib.line_of("size"), "library.size must be a positive integer")
+            size = lib["size"]
+        if "seed" in lib:
+            if isinstance(lib["seed"], bool) or not isinstance(lib["seed"], int) or lib["seed"] < 0:
+                c.fail(lib.line_of("seed"), "library.seed must be a non-negative integer")
+            seed = lib["seed"]
 
     factor = 100.0
     if "bounds" in top:
@@ -182,6 +196,7 @@ def _load_build_config(path: Path) -> BuildConfig:
 
     return BuildConfig(
         path=path, models=models, compartments=comps, time_unit=time_unit, bounds_factor=factor,
+        library_size=size, library_seed=seed,
         vocabulary_path=rel("vocabulary", None), overrides_path=rel("overrides", None),
         cache_dir=rel("cache", ".plbuild-cache"), output_dir=rel("output", "out"),
     )

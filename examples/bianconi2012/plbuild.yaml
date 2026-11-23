@@ -7,6 +7,8 @@ output: out
 
 library:
   time_unit: minute        # the model declares no units; library units = source units for this test
+  size: 25                 # PI, 2026-11-23: draw 25 entries from the 22 curated processes + 16 templates
+  seed: 1                  # fixes the draw, so rebuilds give the same library
 
 bounds:
   factor: 100
@@ -19,3 +21,5 @@ compartments:
 models:
   - id: BIOMD0000000427
     default_compartment: cell
+    sbml: BIOMD0000000427.xml   # local copy until `plbuild fetch` exists (L1)
+    time_span: 2000             # long enough for the pathway to return to rest
