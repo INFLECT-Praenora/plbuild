@@ -1,0 +1,21 @@
+# First process library: BIOMD0000000427 (Bianconi 2012, EGFR and IGF1R pathway), used by EnsGen as both the
+# library source and the ground-truth patient (PI decision, 2026-11-23).
+vocabulary: vocabulary.yaml
+overrides: overrides.yaml
+cache: .plbuild-cache
+output: out
+
+library:
+  time_unit: minute        # the model declares no units; library units = source units for this test
+
+bounds:
+  factor: 100
+
+compartments:
+  cell:
+    identifiers: [http://identifiers.org/bto/BTO:0002058]
+    synonyms: [cell_nsclc]
+
+models:
+  - id: BIOMD0000000427
+    default_compartment: cell

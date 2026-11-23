@@ -1,0 +1,6 @@
+BIOMD0000000427:
+  # The SBML declares no units. Assumed: counts per cell, unit volume, minutes. All conversion factors are 1.
+  units:
+    substance: item
+    volume: litre
+    time: minute
