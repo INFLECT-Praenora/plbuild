@@ -8,7 +8,7 @@ output: out
 library:
   time_unit: minute        # the model declares no units; library units = source units for this test
   size: 25                 # PI, 2026-11-23: draw 25 entries from the 22 curated processes + 16 templates
-  seed: 1                  # fixes the draw, so rebuilds give the same library
+  seed: 4                  # fixes the draw; seed 4 leaves out 9 curated processes, all replaceable by drawn templates
 
 bounds:
   factor: 100
