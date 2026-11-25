@@ -66,3 +66,10 @@ def test_gap_when_the_needed_template_is_not_drawn():
     assert with_deg[0].replaced_by == "A_DEG"
     without = find_gaps([p], [t for t in ts if t.pid == "A_SYN"], ts)
     assert without[0].replaced_by is None and without[0].candidates == ["A_DEG"]
+
+
+def test_template_bounds_apply_to_all_but_hill():
+    ts = {t.pid: t for t in templates((1e-2, 1e5))}
+    assert all((q.lower, q.upper) == (1e-2, 1e5) for t in ts.values() for q in t.params if q.name != "h")
+    assert [(q.lower, q.upper) for q in ts["M_ACT"].params if q.name == "h"] == [(1.0, 4.0)]
+    assert all((q.lower, q.upper) == (1e-6, 1e7) for q in templates()[0].params)

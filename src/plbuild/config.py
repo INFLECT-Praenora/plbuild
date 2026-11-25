@@ -4,11 +4,13 @@ Every problem is raised as ConfigError naming the file and line.
 """
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .templates import DEFAULT_BOUNDS as DEFAULT_TEMPLATE_BOUNDS
 from .yamlload import ConfigError, LineDict, LineList, load_yaml
 
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -48,7 +50,12 @@ class _Checker:
         return value
 
     def number(self, value: Any, line: int | None, what: str, positive: bool = False) -> float:
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
+        if isinstance(value, str):   # PyYAML (YAML 1.1) reads 1e7 and 1.0e7 as strings; only 1.0e+7 is a float
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
             self.fail(line, f"{what} must be a number")
         if positive and value <= 0:
             self.fail(line, f"{what} must be positive")
@@ -101,6 +108,7 @@ class BuildConfig:
     compartments: dict[str, CompartmentSpec]
     time_unit: str
     bounds_factor: float
+    template_bounds: tuple[float, float]  # (lower, upper) for template parameters other than Hill coefficients
     library_size: int | None            # number of entries drawn into the library; None = all
     library_seed: int                   # seed of that draw
     vocabulary_path: Path
@@ -180,14 +188,24 @@ def _load_build_config(path: Path) -> BuildConfig:
                 c.fail(lib.line_of("seed"), "library.seed must be a non-negative integer")
             seed = lib["seed"]
 
-    factor = 100.0
+    factor, tbounds = 100.0, DEFAULT_TEMPLATE_BOUNDS
     if "bounds" in top:
         b = c.mapping(top["bounds"], top.line_of("bounds"), "bounds")
-        c.keys(b, {"factor"}, "bounds")
+        c.keys(b, {"factor", "templates"}, "bounds")
         if "factor" in b:
             factor = c.number(b["factor"], b.line_of("factor"), "bounds.factor", positive=True)
             if factor <= 1:
                 c.fail(b.line_of("factor"), "bounds.factor must be greater than 1")
+        if "templates" in b:
+            tl = b.line_of("templates")
+            pair = c.seq(b["templates"], tl, "bounds.templates")
+            if len(pair) != 2:
+                c.fail(tl, "bounds.templates must be [lower, upper]")
+            lo = c.number(pair[0], tl, "bounds.templates lower", positive=True)
+            hi = c.number(pair[1], tl, "bounds.templates upper", positive=True)
+            if not lo < 1.0 < hi:
+                c.fail(tl, "bounds.templates must satisfy lower < 1 < upper (template parameters start at 1)")
+            tbounds = (lo, hi)
 
     def rel(key: str, default: str | None) -> Path | None:
         if key not in top:
@@ -195,7 +213,7 @@ def _load_build_config(path: Path) -> BuildConfig:
         return base / c.string(top[key], top.line_of(key), key)
 
     return BuildConfig(
-        path=path, models=models, compartments=comps, time_unit=time_unit, bounds_factor=factor,
+        path=path, models=models, compartments=comps, time_unit=time_unit, bounds_factor=factor, template_bounds=tbounds,
         library_size=size, library_seed=seed,
         vocabulary_path=rel("vocabulary", None), overrides_path=rel("overrides", None),
         cache_dir=rel("cache", ".plbuild-cache"), output_dir=rel("output", "out"),

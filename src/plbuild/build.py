@@ -52,7 +52,7 @@ def build(inputs: Inputs) -> BuildResult:
                 p.pid = curated[p.pid].pid
             else:
                 curated[p.pid] = p
-    tmpl = templates()
+    tmpl = templates(cfg.template_bounds)
     pool = list(curated.values()) + tmpl
     drawn = draw(pool, cfg.library_size, cfg.library_seed)
     gaps = find_gaps(list(curated.values()), drawn, tmpl)

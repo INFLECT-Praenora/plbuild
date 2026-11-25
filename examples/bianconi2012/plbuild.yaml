@@ -11,7 +11,9 @@ library:
   seed: 4                  # fixes the draw; seed 4 leaves out 9 curated processes, all replaceable by drawn templates
 
 bounds:
-  factor: 100
+  factor: 100                  # curated parameters: source value / 100 to source value * 100
+  templates: [1.0e-6, 1.0e7]   # template parameters (Hill coefficients stay 1 to 4). The EnsGen spec's 1e-3..1e3 is
+                               # too narrow here: 427's Michaelis constants reach ~1e6 because species are molecule counts
 
 compartments:
   cell:

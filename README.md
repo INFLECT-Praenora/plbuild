@@ -37,6 +37,10 @@ The generic processes (synthesis, degradation, conversion, Michaelis-Menten, tra
 linear, activation and inhibition multipliers) are defined in `src/plbuild/templates.py` and written into the library
 like any other entry. EnsGen has none built in.
 
+Template parameters start at 1 and are bounded by `bounds.templates` in `plbuild.yaml` (default `[1.0e-6, 1.0e7]`);
+Hill coefficients are always bounded 1 to 4. Curated parameters are bounded by `bounds.factor` around their source
+value. The EnsGen spec's example range, 1e-3 to 1e3, is too narrow for models whose species are molecule counts.
+
 ## Install and test
 
 ```

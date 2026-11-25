@@ -67,6 +67,7 @@ def test_good_inputs_load(tmp_path):
     assert inp.config.models[0].default_compartment == "tissue"
     assert inp.config.compartments["blood"].synonyms == ["plasma"]
     assert inp.config.time_unit == "hour" and inp.config.bounds_factor == 100
+    assert inp.config.template_bounds == (1e-6, 1e7)
     assert inp.vocabulary["IL6"].molar_mass == 20900
     o = inp.overrides["BIOMD0000000427"]
     assert o.species == {"s1": "IL6"} and o.bounds == {"k1": (0.1, 10.0)} and o.units["time"] == "minute"
@@ -76,6 +77,12 @@ def test_example_library_config_loads():
     inp = load_inputs(EXAMPLE)
     assert inp.config.models[0].id == "BIOMD0000000427"
     assert len(inp.vocabulary) == 21
+    assert inp.config.template_bounds == (1e-6, 1e7)
+
+
+def test_template_bounds_are_read(tmp_path):
+    inp = load_inputs(write(tmp_path, config=GOOD_CONFIG + "bounds:\n  templates: [1.0e-3, 1.0e3]\n"))
+    assert inp.config.template_bounds == (1e-3, 1e3)
 
 
 # --- plbuild.yaml
@@ -90,6 +97,9 @@ def test_example_library_config_loads():
     (GOOD_CONFIG.replace("  tissue: {}\n", "  2tissue: {}\n"), 6, "identifier"),
     (GOOD_CONFIG.replace("version: 5", "version: [5]"), 9, "version"),
     ("vocabulary: vocabulary.yaml\nmodels: []\n", 1, "compartments"),
+    (GOOD_CONFIG + "bounds:\n  templates: [1.0e-3]\n", 13, "[lower, upper]"),
+    (GOOD_CONFIG + "bounds:\n  templates: [10, 1.0e3]\n", 13, "lower < 1 < upper"),
+    (GOOD_CONFIG + "bounds:\n  templates: [0, 1.0e3]\n", 13, "positive"),
 ])
 def test_malformed_config(tmp_path, config, line, text):
     err = expect_error(write(tmp_path, config=config), "plbuild.yaml", line)

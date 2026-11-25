@@ -10,11 +10,15 @@ from __future__ import annotations
 
 from .process import Param, Process
 
-LO, HI = 1e-3, 1e3   # default bounds for template parameters
+# Default bounds for every template parameter except Hill coefficients. Change them per library with
+# `bounds: templates: [lower, upper]` in plbuild.yaml. EnsGen spec section 5 uses 1e-3 to 1e3, which is too narrow for
+# models whose concentrations are molecule counts (BIOMD0000000427 needs Michaelis constants up to about 1e6).
+DEFAULT_BOUNDS = (1e-6, 1e7)
+HILL_BOUNDS = (1.0, 4.0)   # Hill coefficients, plbuild spec section 9; not changed by the config
 
 
-def _p(name: str, meaning: str, value: float = 1.0, lower: float = LO, upper: float = HI) -> Param:
-    return Param(name, value, lower, upper, meaning)
+def _param(name: str, meaning: str, bounds: tuple[float, float]) -> Param:
+    return Param(name, 1.0, bounds[0], bounds[1], meaning)
 
 
 def _t(pid, kind, title, consumed, produced, influencing, expr, params, notes=()):
@@ -22,8 +26,14 @@ def _t(pid, kind, title, consumed, produced, influencing, expr, params, notes=()
                    expr=expr, params=params, notes=list(notes))
 
 
-def templates() -> list[Process]:
-    """All template processes, in a fixed order."""
+def templates(bounds: tuple[float, float] = DEFAULT_BOUNDS) -> list[Process]:
+    """All template processes, in a fixed order. `bounds` = (lower, upper) for every non-Hill parameter."""
+    def _p(name: str, meaning: str) -> Param:
+        return _param(name, meaning, bounds)
+
+    def _hill() -> Param:
+        return _param("h", "Hill coefficient", HILL_BOUNDS)
+
     return [
         _t("A_SYN", "anonymous", "Template: synthesis of X at a constant rate", [], [("X", 1)], [],
            "k0", [_p("k0", "synthesis rate")]),
@@ -63,8 +73,8 @@ def templates() -> list[Process]:
            [], [], ["A"], "A", []),
         _t("M_ACT", "modifier", "Multiplier: A activates, with saturation (Hill form)",
            [], [], ["A"], "A^h/(K^h + A^h)",
-           [_p("K", "half-activation constant"), _p("h", "Hill coefficient", 1.0, 1.0, 4.0)]),
+           [_p("K", "half-activation constant"), _hill()]),
         _t("M_INH", "modifier", "Multiplier: I inhibits (Hill form)",
            [], [], ["I"], "1/(1 + (I/K)^h)",
-           [_p("K", "half-inhibition constant"), _p("h", "Hill coefficient", 1.0, 1.0, 4.0)]),
+           [_p("K", "half-inhibition constant"), _hill()]),
     ]
